@@ -7,31 +7,120 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         /* Telegram Theme Integration */
+        :root {
+            --tg-bg: var(--tg-theme-bg-color, #f8f9fa);
+            --tg-text: var(--tg-theme-text-color, #212529);
+            --tg-button: var(--tg-theme-button-color, #6C47FF);
+            --tg-button-text: var(--tg-theme-button-text-color, white);
+        }
+        
         body {
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--tg-theme-bg-color, #f5f5f5);
-            color: var(--tg-theme-text-color, #222);
+            background: var(--tg-bg);
+            color: var(--tg-text);
         }
 
-        /* Force form container to fit Mini App */
-        #formContainerDiv {
+        /* Form Container */
+        .container {
             padding: 15px;
             max-width: 100%;
             box-sizing: border-box;
         }
 
-        /* Improve form inputs for mobile */
-        input, button {
-            font-size: 16px !important;
-            padding: 12px !important;
+        /* Header Styling */
+        .admin-header h2 {
+            color: var(--tg-button);
+            text-align: center;
+            margin-bottom: 20px;
         }
 
-        /* Add Telegram-style header */
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background-color: var(--tg-theme-secondary-bg-color, white);
+            color: var(--tg-text);
+        }
+
+        /* Divider */
+        .divider-with-text {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .divider-with-text span {
+            background: var(--tg-bg);
+            padding: 0 10px;
+            position: relative;
+            z-index: 1;
+            color: var(--tg-button);
+            font-weight: bold;
+        }
+        
+        .divider-with-text:before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            border-top: 1px solid #ddd;
+            z-index: 0;
+        }
+
+        /* Submit Button */
+        .submit-button {
+            background: var(--tg-button);
+            color: var(--tg-button-text);
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* Responsive Grid */
+        .form-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+        
+        @media (max-width: 600px) {
+            .form-row-2, .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Telegram Header */
         .telegram-header {
-            background: var(--tg-theme-header-bg-color, #6C47FF);
-            color: var(--tg-theme-header-text-color, white);
+            background: var(--tg-button);
+            color: var(--tg-button-text);
             padding: 15px;
             text-align: center;
             font-weight: bold;
@@ -39,58 +128,176 @@
             top: 0;
             z-index: 100;
         }
-
-        /* Close button */
+        
         .close-btn {
             position: absolute;
             right: 15px;
             top: 15px;
             background: none;
             border: none;
-            color: white;
+            color: var(--tg-button-text);
             font-size: 20px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <!-- Telegram Header with Close Button -->
+    <!-- Telegram Header -->
     <div class="telegram-header">
-        🚀 Deploy Your Token
+        🚀 Token Deployer
         <button class="close-btn" onclick="Telegram.WebApp.close()">×</button>
     </div>
 
-    <!-- Embedded Form (Your Existing Code) -->
+    <!-- Your Form (Exactly as provided) -->
     <div class="container" id="formContainerDiv">
-        <!-- PASTE YOUR ENTIRE FORM CODE HERE -->
-        <!-- (The form HTML you provided goes here) -->
+        <form id="contractForm">
+            <div class="admin-header">
+                <h2>Generate Your Token</h2>
+            </div>
+
+            <div class="divider-with-text">
+                <span>Token Details</span>
+            </div>
+
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label for="tokenName">Token Name</label>
+                    <input type="text" id="tokenName" name="tokenName" required>
+                </div>
+                <div class="form-group">
+                    <label for="tokenSymbol">Token Symbol</label>
+                    <input type="text" id="tokenSymbol" name="tokenSymbol" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="maxWallet">Max Wallet</label>
+                    <input type="number" id="maxWallet" min="1" value="10000" step="1" name="maxWallet" required>
+                </div>
+                <div class="form-group">
+                    <label for="maxTransaction">Max Transaction</label>
+                    <input type="number" id="maxTransaction" min="1" value="100000" step="1" name="maxTransaction" required>
+                </div>
+                <div class="form-group">
+                    <label for="tokenDecimal">Decimals</label>
+                    <input type="number" id="tokenDecimal" value="18" name="tokenDecimal" min="1" max="18" step="1" required>
+                </div>
+            </div>
+
+            <div class="divider-with-text">
+                <span>Tax & Supply</span>
+            </div>
+            <div class="form-row-2" style="margin-top: 15px;">
+                <div class="form-group">
+                    <label for="totalSupply">Total Supply</label>
+                    <input type="number" step="1" value="1000000" id="totalSupply" name="totalSupply" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="supplyPercentage">Supply Percentage</label>
+                    <input type="number" id="supplyPercentage" min="1" max="100" step="1" value="100" name="supplyPercentage" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="buyTax">Buy Tax</label>
+                    <input type="number" min="0" max="25" value="5" step="1" id="buyTax" name="buyTax" required>
+                </div>
+                <div class="form-group">
+                    <label for="sellTax">Sell Tax</label>
+                    <input type="number" min="0" max="25" value="5" step="1" id="sellTax" name="sellTax" required>
+                </div>
+                <div class="form-group">
+                    <label for="marketingWallet">Marketing Wallet</label>
+                    <input type="text" id="marketingWallet" name="marketingWallet" required>
+                </div>
+            </div>
+            <div class="form-row" id="liqDev">
+                <div class="form-group">
+                    <label for="liquidity">Liquidity</label>
+                    <input type="number" min="0.01" step="0.0001" id="liquidity" name="liquidity" placeholder="Liquidity in ETH" required>
+                </div>
+            </div>
+
+            <div class="divider-with-text">
+                <span>Social Media</span>
+            </div>
+
+            <div class="row">
+                <div class="col-3">
+                    <div class="form-group">
+                        <input type="text" id="telegram" placeholder="Telegram" name="telegram">
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="form-group">
+                        <input type="text" id="twitter" placeholder="X" name="twitter">
+                    </div>
+                </div>
+
+                <div class="col-3">
+                    <div class="form-group">
+                        <input type="text" id="website" placeholder="Website" name="website">
+                    </div>
+                </div>
+
+                <div class="col-3">
+                    <div class="form-group">
+                        <input type="text" id="medium" placeholder="Medium" name="medium">
+                    </div>
+                </div>
+            </div>
+            <hr>
+
+            <div style="margin-top: 10px;">
+                <div class="row" id="checkBurnDev" style="display: inline-flex;">
+                    <div class="col-1">
+                        <input type="checkbox" id="isBurnCheckBox">
+                    </div>
+                    <div class="col" style="margin-left: -5px;">
+                        <span>I accept that the liquidity will be burned and cannot be recovered.</span>
+                    </div>
+                </div>
+                <button id="btnSubmit" class="submit-button" style="margin-top: 5px;" type="submit">Start</button>
+            </div>
+        </form>
+        
+        <div id="loader" class="loader-overlay" style="display: none;">
+            <div class="sk-chase">
+                <div class="sk-chase-dot"></div>
+                <div class="sk-chase-dot"></div>
+                <div class="sk-chase-dot"></div>
+                <div class="sk-chase-dot"></div>
+                <div class="sk-chase-dot"></div>
+                <div class="sk-chase-dot"></div>
+            </div>
+            <div id="loader-text" class="loader-text">Loading, please wait...</div>
+        </div>
     </div>
 
     <script>
         // Initialize Telegram WebApp
         Telegram.WebApp.ready();
-        Telegram.WebApp.expand(); // Full-screen mode
-
-        // Adjust form styling on load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Make form inputs more mobile-friendly
-            const inputs = document.querySelectorAll('input');
-            inputs.forEach(input => {
-                input.style.width = '100%';
-                input.style.boxSizing = 'border-box';
-                input.style.marginBottom = '10px';
-            });
-
-            // Style the submit button to match Telegram
-            const submitBtn = document.getElementById('btnSubmit');
-            if (submitBtn) {
-                submitBtn.style.background = 'var(--tg-theme-button-color, #6C47FF)';
-                submitBtn.style.color = 'var(--tg-theme-button-text-color, white)';
-                submitBtn.style.border = 'none';
-                submitBtn.style.borderRadius = '8px';
-                submitBtn.style.padding = '12px 0';
-                submitBtn.style.width = '100%';
-            }
+        Telegram.WebApp.expand();
+        
+        // Auto-close after submission
+        document.getElementById('contractForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            document.getElementById('loader').style.display = 'block';
+            
+            // Simulate processing (replace with actual form submission)
+            setTimeout(function() {
+                Telegram.WebApp.showAlert('Token deployed successfully!');
+                Telegram.WebApp.close();
+            }, 3000);
         });
+        
+        // Pre-fill wallet if available
+        if (Telegram.WebApp.initDataUnsafe.user) {
+            document.getElementById('marketingWallet').value = 
+                Telegram.WebApp.initDataUnsafe.user.id || 'User_' + Math.random().toString(36).substr(2, 9);
+        }
     </script>
 </body>
 </html>
