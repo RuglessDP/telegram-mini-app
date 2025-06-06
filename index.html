@@ -5,143 +5,174 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Token Deployer</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Add these for wallet connection -->
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.8/dist/umd/index.min.js"></script>
     <style>
-        body {
-            font-family: -apple-system, sans-serif;
-            background: var(--tg-theme-bg-color, #f5f5f5);
-            color: var(--tg-theme-text-color, #222);
-            padding: 15px;
-            margin: 0;
+        /* Add these new styles */
+        #walletModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
         }
-        .wallet-section {
-            background: var(--tg-theme-secondary-bg-color, #eee);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: none; /* Hidden by default */
+        .wallet-modal-content {
+            background: var(--tg-theme-bg-color, white);
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
         }
         .wallet-btn {
-            background: #f6851b;
+            background: #f6851b; /* MetaMask orange */
             color: white;
             border: none;
             padding: 12px;
             border-radius: 8px;
             width: 100%;
+            margin: 10px 0;
             font-size: 16px;
-            margin: 5px 0;
             cursor: pointer;
         }
-        .continue-btn {
-            background: var(--tg-theme-button-color, #6C47FF);
+        #walletConnectBtn {
+            background: #3b99fc; /* WalletConnect blue */
         }
         #walletAddress {
             word-break: break-all;
+            margin-top: 15px;
+            padding: 10px;
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-radius: 8px;
             font-size: 14px;
-            margin-top: 10px;
-            padding: 8px;
-            background: rgba(0,0,0,0.1);
-            border-radius: 5px;
-            display: none;
         }
-        #connectLaterBtn {
-            display: none; /* Only shows after form submission */
-        }
+    </style>
+    <!-- Your existing styles here -->
+    <style>
+        /* [PASTE ALL YOUR EXISTING STYLES HERE] */
+        /* They should remain exactly as they are */
     </style>
 </head>
 <body>
-    <!-- Your Form (Visible Immediately) -->
-    <form id="contractForm">
-        <h2>Token Details</h2>
-        
-        <!-- Paste ALL your form fields here exactly as you have them -->
-        <div class="form-group">
-            <label for="tokenName">Token Name</label>
-            <input type="text" id="tokenName" required>
-        </div>
-        
-        <!-- Include ALL other inputs, dividers, etc. -->
-        
-        <button type="submit" class="wallet-btn continue-btn">Start Deployment</button>
-    </form>
+    <!-- Telegram Header -->
+    <div class="telegram-header">
+        🚀 Token Deployer
+        <button class="close-btn" onclick="Telegram.WebApp.close()">×</button>
+    </div>
 
-    <!-- Wallet Connection Modal (Hidden Until Needed) -->
-    <div id="walletSection" class="wallet-section">
-        <h3>Connect Wallet to Confirm</h3>
-        <button id="connectBtn" class="wallet-btn">Connect MetaMask</button>
-        <button id="walletConnectBtn" class="wallet-btn" style="background: #3b99fc;">WalletConnect</button>
-        <button id="connectLaterBtn" class="wallet-btn continue-btn">Continue Without Connecting</button>
-        <div id="walletAddress"></div>
+    <!-- Your Form (Exactly as provided) -->
+    <div class="container" id="formContainerDiv">
+        <!-- [PASTE YOUR ENTIRE FORM CODE HERE] -->
+        <!-- It should remain exactly the same -->
+    </div>
+
+    <!-- Wallet Connection Modal (hidden until needed) -->
+    <div id="walletModal">
+        <div class="wallet-modal-content">
+            <h3>Connect Wallet to Deploy</h3>
+            <button id="connectBtn" class="wallet-btn">Connect MetaMask</button>
+            <button id="walletConnectBtn" class="wallet-btn">WalletConnect</button>
+            <div id="walletAddress"></div>
+        </div>
     </div>
 
     <script>
+        // Initialize Telegram WebApp
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
+        
+        // Store form data
         let formData = {};
-
-        // Form submission handler
-        document.getElementById('contractForm').addEventListener('submit', (e) => {
+        
+        // Modified form submission handler
+        document.getElementById('contractForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Store form data
+            // Store all form data
             formData = {
                 tokenName: document.getElementById('tokenName').value,
-                // Add all other form fields here
+                tokenSymbol: document.getElementById('tokenSymbol').value,
+                // Add all other form fields here...
+                marketingWallet: document.getElementById('marketingWallet').value
             };
-
-            // Show wallet connection options
-            document.getElementById('walletSection').style.display = 'block';
-            document.getElementById('connectLaterBtn').style.display = 'block';
             
-            // Scroll to wallet section
-            document.getElementById('walletSection').scrollIntoView();
+            // Show wallet modal instead of immediately submitting
+            document.getElementById('walletModal').style.display = 'flex';
         });
-
+        
         // MetaMask connection
         document.getElementById('connectBtn').addEventListener('click', async () => {
             if (typeof window.ethereum === 'undefined') {
                 Telegram.WebApp.showAlert('Please install MetaMask!');
                 return;
             }
-
+            
             try {
                 const accounts = await window.ethereum.request({ 
                     method: 'eth_requestAccounts' 
                 });
-                completeDeployment(accounts[0]);
+                proceedWithDeployment(accounts[0]);
             } catch (error) {
                 Telegram.WebApp.showAlert(`MetaMask error: ${error.message}`);
             }
         });
-
+        
         // WalletConnect connection
         document.getElementById('walletConnectBtn').addEventListener('click', async () => {
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.8/dist/umd/index.min.js';
-            script.onload = async () => {
+            try {
                 const provider = new WalletConnectProvider.default({
-                    rpc: { 1: "https://mainnet.infura.io/v3/YOUR_INFURA_KEY" }
+                    rpc: {
+                        1: "https://mainnet.infura.io/v3/YOUR_INFURA_KEY" // Ethereum
+                        // For BSC: 56: "https://bsc-dataseed.binance.org/"
+                    }
                 });
                 
                 await provider.enable();
                 const web3 = new Web3(provider);
                 const accounts = await web3.eth.getAccounts();
-                completeDeployment(accounts[0]);
-            };
-            document.head.appendChild(script);
+                proceedWithDeployment(accounts[0]);
+            } catch (error) {
+                Telegram.WebApp.showAlert(`WalletConnect error: ${error.message}`);
+            }
         });
-
-        // Continue without connecting
-        document.getElementById('connectLaterBtn').addEventListener('click', () => {
-            Telegram.WebApp.showAlert('Form submitted in demo mode');
-            // Add any non-wallet submission logic here
-        });
-
-        function completeDeployment(address) {
-            Telegram.WebApp.showAlert(`
-                Ready to deploy ${formData.tokenName}!
-                From: ${address.slice(0,6)}...${address.slice(-4)}
-            `);
-            // Add your actual deployment logic here
+        
+        // Final deployment function
+        function proceedWithDeployment(walletAddress) {
+            // Show connected wallet
+            document.getElementById('walletAddress').textContent = `Connected: ${walletAddress}`;
+            
+            // Verify deployment details
+            Telegram.WebApp.showConfirm(
+                `Confirm Deployment\n\n` +
+                `Token: ${formData.tokenName} (${formData.tokenSymbol})\n` +
+                `Deploying from: ${walletAddress.slice(0,6)}...${walletAddress.slice(-4)}`,
+                (confirmed) => {
+                    if (confirmed) {
+                        document.getElementById('loader').style.display = 'block';
+                        // Here you would:
+                        // 1. Compile contract with formData
+                        // 2. Send transaction via connected wallet
+                        // 3. Show progress in Telegram.WebApp
+                        
+                        // Simulate deployment (replace with actual)
+                        setTimeout(() => {
+                            Telegram.WebApp.showAlert('Token deployed successfully!');
+                            Telegram.WebApp.close();
+                        }, 3000);
+                    }
+                }
+            );
+        }
+        
+        // Pre-fill wallet if available
+        if (Telegram.WebApp.initDataUnsafe.user) {
+            document.getElementById('marketingWallet').value = 
+                Telegram.WebApp.initDataUnsafe.user.id || 'User_' + Math.random().toString(36).substr(2, 9);
         }
     </script>
 </body>
