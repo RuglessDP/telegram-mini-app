@@ -3,145 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERC20 Token Deployer</title>
+    <title>Token Deployer</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.8/dist/umd/index.min.js"></script>
     <style>
-        /* Telegram-themed styles */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--tg-theme-bg-color, #f5f5f5);
-            color: var(--tg-theme-text-color, #222);
-            padding: 15px;
-            margin: 0;
+        /* Your existing form styles here */
+        #walletModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .wallet-container {
+            background: var(--tg-theme-bg-color, white);
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
         }
         .wallet-btn {
-            background: #f6851b; /* MetaMask orange */
+            background: #f6851b;
             color: white;
             border: none;
             padding: 12px;
             border-radius: 8px;
             width: 100%;
-            font-size: 16px;
             margin: 10px 0;
             cursor: pointer;
-        }
-        #walletAddress {
-            word-break: break-all;
-            font-size: 14px;
-            padding: 10px;
-            background: var(--tg-theme-secondary-bg-color, #eee);
-            border-radius: 8px;
-            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <h2>ERC20 Token Deployment</h2>
-    
-    <!-- Wallet Connection Section -->
-    <button id="connectBtn" class="wallet-btn">Connect Wallet</button>
-    <div id="walletAddress">Not connected</div>
-    
-    <!-- Your existing ERC20 form goes here -->
-    <div id="contractForm">
-        <!-- Paste your entire form HTML here -->
+    <!-- Your existing form (keep all fields) -->
+    <form id="contractForm">
+        <!-- All your token detail inputs here -->
+        <button type="submit" class="submit-button">Start Deployment</button>
+    </form>
+
+    <!-- Wallet Connection Modal (hidden until needed) -->
+    <div id="walletModal">
+        <div class="wallet-container">
+            <h3>Connect Wallet to Confirm</h3>
+            <button id="connectBtn" class="wallet-btn">Connect MetaMask</button>
+            <button id="walletConnectBtn" class="wallet-btn" style="background: #3b99fc;">WalletConnect</button>
+            <div id="walletAddress" style="margin-top: 15px;"></div>
+        </div>
     </div>
 
     <script>
-        // Telegram WebApp initialization
+        // Telegram and Web3 setup
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
-        
-        // Wallet Connection Logic
+        let formData = {};
+
+        // Form submission handler
+        document.getElementById('contractForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Store form data
+            formData = {
+                tokenName: document.getElementById('tokenName').value,
+                tokenSymbol: document.getElementById('tokenSymbol').value,
+                // Add all other form fields
+            };
+
+            // Show wallet modal
+            document.getElementById('walletModal').style.display = 'flex';
+        });
+
+        // MetaMask connection
         document.getElementById('connectBtn').addEventListener('click', async () => {
+            if (typeof window.ethereum === 'undefined') {
+                Telegram.WebApp.showAlert('Please install MetaMask!');
+                return;
+            }
+
             try {
-                // Try MetaMask first
-                if (typeof window.ethereum !== 'undefined') {
-                    const accounts = await window.ethereum.request({ 
-                        method: 'eth_requestAccounts' 
-                    });
-                    showConnectedWallet(accounts[0]);
-                    
-                    // Ensure Ethereum Mainnet (chainId = 1)
-                    if (window.ethereum.chainId !== '0x1') {
-                        await switchToEthereum();
-                    }
-                    return;
-                }
-                
-                // Fallback to WalletConnect
+                const accounts = await window.ethereum.request({ 
+                    method: 'eth_requestAccounts' 
+                });
+                completeDeployment(accounts[0]);
+            } catch (error) {
+                Telegram.WebApp.showAlert(`MetaMask error: ${error.message}`);
+            }
+        });
+
+        // WalletConnect connection (loaded on demand)
+        document.getElementById('walletConnectBtn').addEventListener('click', async () => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.8/dist/umd/index.min.js';
+            script.onload = async () => {
                 const provider = new WalletConnectProvider.default({
-                    rpc: {
-                        1: "https://mainnet.infura.io/v3/YOUR_INFURA_KEY" // Ethereum
-                    },
-                    chainId: 1 // Force Ethereum
+                    rpc: { 1: "https://mainnet.infura.io/v3/YOUR_INFURA_KEY" }
                 });
                 
                 await provider.enable();
                 const web3 = new Web3(provider);
                 const accounts = await web3.eth.getAccounts();
-                showConnectedWallet(accounts[0]);
-                
-            } catch (error) {
-                Telegram.WebApp.showAlert(`Connection failed: ${error.message}`);
-            }
+                completeDeployment(accounts[0]);
+            };
+            document.head.appendChild(script);
         });
-        
-        // Network switching to Ethereum
-        async function switchToEthereum() {
-            try {
-                await window.ethereum.request({
-                    method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: '0x1' }] // Ethereum Mainnet
-                });
-            } catch (error) {
-                // This error code indicates the chain hasn't been added to MetaMask
-                if (error.code === 4902) {
-                    await addEthereumChain();
-                }
-            }
-        }
-        
-        async function addEthereumChain() {
-            await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                    chainId: '0x1',
-                    chainName: 'Ethereum Mainnet',
-                    nativeCurrency: {
-                        name: 'ETH',
-                        symbol: 'ETH',
-                        decimals: 18
-                    },
-                    rpcUrls: ['https://mainnet.infura.io/v3/YOUR_INFURA_KEY'],
-                    blockExplorerUrls: ['https://etherscan.io/']
-                }]
-            });
-        }
-        
-        function showConnectedWallet(address) {
-            document.getElementById('walletAddress').textContent = address;
-            document.getElementById('marketingWallet').value = address;
-            Telegram.WebApp.showAlert(`Connected: ${address.slice(0,6)}...${address.slice(-4)}`);
-        }
-        
-        // Your existing form submission logic
-        document.getElementById('contractForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+
+        // Final deployment with wallet
+        function completeDeployment(walletAddress) {
+            Telegram.WebApp.showAlert(`
+                Ready to deploy!
+                Token: ${formData.tokenName} (${formData.tokenSymbol})
+                From: ${walletAddress.slice(0,6)}...${walletAddress.slice(-4)}
+            `);
             
-            if (!document.getElementById('walletAddress').textContent.includes('0x')) {
-                Telegram.WebApp.showAlert('Please connect wallet first!');
-                return;
-            }
+            // Here you would:
+            // 1. Compile contract with formData
+            // 2. Send transaction via connected wallet
+            // 3. Show progress in Telegram.WebApp
             
-            // Add your ERC20 deployment logic here
-            // This typically involves:
-            // 1. Compiling contract ABI
-            // 2. Estimating gas
-            // 3. Sending transaction
-        });
+            Telegram.WebApp.close();
+        }
     </script>
 </body>
 </html>
