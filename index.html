@@ -3,301 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Token Deployer</title>
+    <title>ERC20 Token Deployer</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.8/dist/umd/index.min.js"></script>
     <style>
-        /* Telegram Theme Integration */
-        :root {
-            --tg-bg: var(--tg-theme-bg-color, #f8f9fa);
-            --tg-text: var(--tg-theme-text-color, #212529);
-            --tg-button: var(--tg-theme-button-color, #6C47FF);
-            --tg-button-text: var(--tg-theme-button-text-color, white);
-        }
-        
+        /* Telegram-themed styles */
         body {
-            margin: 0;
-            padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--tg-bg);
-            color: var(--tg-text);
-        }
-
-        /* Form Container */
-        .container {
+            background: var(--tg-theme-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #222);
             padding: 15px;
-            max-width: 100%;
-            box-sizing: border-box;
+            margin: 0;
         }
-
-        /* Header Styling */
-        .admin-header h2 {
-            color: var(--tg-button);
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        /* Form Elements */
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-        
-        input, select {
-            width: 100%;
+        .wallet-btn {
+            background: #f6851b; /* MetaMask orange */
+            color: white;
+            border: none;
             padding: 12px;
-            border: 1px solid #ddd;
             border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-            background-color: var(--tg-theme-secondary-bg-color, white);
-            color: var(--tg-text);
-        }
-
-        /* Divider */
-        .divider-with-text {
-            text-align: center;
-            margin: 20px 0;
-            position: relative;
-        }
-        
-        .divider-with-text span {
-            background: var(--tg-bg);
-            padding: 0 10px;
-            position: relative;
-            z-index: 1;
-            color: var(--tg-button);
-            font-weight: bold;
-        }
-        
-        .divider-with-text:before {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            border-top: 1px solid #ddd;
-            z-index: 0;
-        }
-
-        /* Submit Button */
-        .submit-button {
-            background: var(--tg-button);
-            color: var(--tg-button-text);
-            border: none;
-            border-radius: 8px;
-            padding: 14px;
             width: 100%;
             font-size: 16px;
-            font-weight: bold;
+            margin: 10px 0;
             cursor: pointer;
+        }
+        #walletAddress {
+            word-break: break-all;
+            font-size: 14px;
+            padding: 10px;
+            background: var(--tg-theme-secondary-bg-color, #eee);
+            border-radius: 8px;
             margin-top: 10px;
-        }
-
-        /* Responsive Grid */
-        .form-row-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 15px;
-        }
-        
-        @media (max-width: 600px) {
-            .form-row-2, .form-row {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Telegram Header */
-        .telegram-header {
-            background: var(--tg-button);
-            color: var(--tg-button-text);
-            padding: 15px;
-            text-align: center;
-            font-weight: bold;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        
-        .close-btn {
-            position: absolute;
-            right: 15px;
-            top: 15px;
-            background: none;
-            border: none;
-            color: var(--tg-button-text);
-            font-size: 20px;
-            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <!-- Telegram Header -->
-    <div class="telegram-header">
-        🚀 Token Deployer
-        <button class="close-btn" onclick="Telegram.WebApp.close()">×</button>
-    </div>
-
-    <!-- Your Form (Exactly as provided) -->
-    <div class="container" id="formContainerDiv">
-        <form id="contractForm">
-            <div class="admin-header">
-                <h2>Generate Your Token</h2>
-            </div>
-
-            <div class="divider-with-text">
-                <span>Token Details</span>
-            </div>
-
-            <div class="form-row-2">
-                <div class="form-group">
-                    <label for="tokenName">Token Name</label>
-                    <input type="text" id="tokenName" name="tokenName" required>
-                </div>
-                <div class="form-group">
-                    <label for="tokenSymbol">Token Symbol</label>
-                    <input type="text" id="tokenSymbol" name="tokenSymbol" required>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="maxWallet">Max Wallet</label>
-                    <input type="number" id="maxWallet" min="1" value="10000" step="1" name="maxWallet" required>
-                </div>
-                <div class="form-group">
-                    <label for="maxTransaction">Max Transaction</label>
-                    <input type="number" id="maxTransaction" min="1" value="100000" step="1" name="maxTransaction" required>
-                </div>
-                <div class="form-group">
-                    <label for="tokenDecimal">Decimals</label>
-                    <input type="number" id="tokenDecimal" value="18" name="tokenDecimal" min="1" max="18" step="1" required>
-                </div>
-            </div>
-
-            <div class="divider-with-text">
-                <span>Tax & Supply</span>
-            </div>
-            <div class="form-row-2" style="margin-top: 15px;">
-                <div class="form-group">
-                    <label for="totalSupply">Total Supply</label>
-                    <input type="number" step="1" value="1000000" id="totalSupply" name="totalSupply" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="supplyPercentage">Supply Percentage</label>
-                    <input type="number" id="supplyPercentage" min="1" max="100" step="1" value="100" name="supplyPercentage" required>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="buyTax">Buy Tax</label>
-                    <input type="number" min="0" max="25" value="5" step="1" id="buyTax" name="buyTax" required>
-                </div>
-                <div class="form-group">
-                    <label for="sellTax">Sell Tax</label>
-                    <input type="number" min="0" max="25" value="5" step="1" id="sellTax" name="sellTax" required>
-                </div>
-                <div class="form-group">
-                    <label for="marketingWallet">Marketing Wallet</label>
-                    <input type="text" id="marketingWallet" name="marketingWallet" required>
-                </div>
-            </div>
-            <div class="form-row" id="liqDev">
-                <div class="form-group">
-                    <label for="liquidity">Liquidity</label>
-                    <input type="number" min="0.01" step="0.0001" id="liquidity" name="liquidity" placeholder="Liquidity in ETH" required>
-                </div>
-            </div>
-
-            <div class="divider-with-text">
-                <span>Social Media</span>
-            </div>
-
-            <div class="row">
-                <div class="col-3">
-                    <div class="form-group">
-                        <input type="text" id="telegram" placeholder="Telegram" name="telegram">
-                    </div>
-                </div>
-                <div class="col-3">
-                    <div class="form-group">
-                        <input type="text" id="twitter" placeholder="X" name="twitter">
-                    </div>
-                </div>
-
-                <div class="col-3">
-                    <div class="form-group">
-                        <input type="text" id="website" placeholder="Website" name="website">
-                    </div>
-                </div>
-
-                <div class="col-3">
-                    <div class="form-group">
-                        <input type="text" id="medium" placeholder="Medium" name="medium">
-                    </div>
-                </div>
-            </div>
-            <hr>
-
-            <div style="margin-top: 10px;">
-                <div class="row" id="checkBurnDev" style="display: inline-flex;">
-                    <div class="col-1">
-                        <input type="checkbox" id="isBurnCheckBox">
-                    </div>
-                    <div class="col" style="margin-left: -5px;">
-                        <span>I accept that the liquidity will be burned and cannot be recovered.</span>
-                    </div>
-                </div>
-                <button id="btnSubmit" class="submit-button" style="margin-top: 5px;" type="submit">Start</button>
-            </div>
-        </form>
-        
-        <div id="loader" class="loader-overlay" style="display: none;">
-            <div class="sk-chase">
-                <div class="sk-chase-dot"></div>
-                <div class="sk-chase-dot"></div>
-                <div class="sk-chase-dot"></div>
-                <div class="sk-chase-dot"></div>
-                <div class="sk-chase-dot"></div>
-                <div class="sk-chase-dot"></div>
-            </div>
-            <div id="loader-text" class="loader-text">Loading, please wait...</div>
-        </div>
+    <h2>ERC20 Token Deployment</h2>
+    
+    <!-- Wallet Connection Section -->
+    <button id="connectBtn" class="wallet-btn">Connect Wallet</button>
+    <div id="walletAddress">Not connected</div>
+    
+    <!-- Your existing ERC20 form goes here -->
+    <div id="contractForm">
+        <!-- Paste your entire form HTML here -->
     </div>
 
     <script>
-        // Initialize Telegram WebApp
+        // Telegram WebApp initialization
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
         
-        // Auto-close after submission
-        document.getElementById('contractForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            document.getElementById('loader').style.display = 'block';
-            
-            // Simulate processing (replace with actual form submission)
-            setTimeout(function() {
-                Telegram.WebApp.showAlert('Token deployed successfully!');
-                Telegram.WebApp.close();
-            }, 3000);
+        // Wallet Connection Logic
+        document.getElementById('connectBtn').addEventListener('click', async () => {
+            try {
+                // Try MetaMask first
+                if (typeof window.ethereum !== 'undefined') {
+                    const accounts = await window.ethereum.request({ 
+                        method: 'eth_requestAccounts' 
+                    });
+                    showConnectedWallet(accounts[0]);
+                    
+                    // Ensure Ethereum Mainnet (chainId = 1)
+                    if (window.ethereum.chainId !== '0x1') {
+                        await switchToEthereum();
+                    }
+                    return;
+                }
+                
+                // Fallback to WalletConnect
+                const provider = new WalletConnectProvider.default({
+                    rpc: {
+                        1: "https://mainnet.infura.io/v3/YOUR_INFURA_KEY" // Ethereum
+                    },
+                    chainId: 1 // Force Ethereum
+                });
+                
+                await provider.enable();
+                const web3 = new Web3(provider);
+                const accounts = await web3.eth.getAccounts();
+                showConnectedWallet(accounts[0]);
+                
+            } catch (error) {
+                Telegram.WebApp.showAlert(`Connection failed: ${error.message}`);
+            }
         });
         
-        // Pre-fill wallet if available
-        if (Telegram.WebApp.initDataUnsafe.user) {
-            document.getElementById('marketingWallet').value = 
-                Telegram.WebApp.initDataUnsafe.user.id || 'User_' + Math.random().toString(36).substr(2, 9);
+        // Network switching to Ethereum
+        async function switchToEthereum() {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: '0x1' }] // Ethereum Mainnet
+                });
+            } catch (error) {
+                // This error code indicates the chain hasn't been added to MetaMask
+                if (error.code === 4902) {
+                    await addEthereumChain();
+                }
+            }
         }
+        
+        async function addEthereumChain() {
+            await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                    chainId: '0x1',
+                    chainName: 'Ethereum Mainnet',
+                    nativeCurrency: {
+                        name: 'ETH',
+                        symbol: 'ETH',
+                        decimals: 18
+                    },
+                    rpcUrls: ['https://mainnet.infura.io/v3/YOUR_INFURA_KEY'],
+                    blockExplorerUrls: ['https://etherscan.io/']
+                }]
+            });
+        }
+        
+        function showConnectedWallet(address) {
+            document.getElementById('walletAddress').textContent = address;
+            document.getElementById('marketingWallet').value = address;
+            Telegram.WebApp.showAlert(`Connected: ${address.slice(0,6)}...${address.slice(-4)}`);
+        }
+        
+        // Your existing form submission logic
+        document.getElementById('contractForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!document.getElementById('walletAddress').textContent.includes('0x')) {
+                Telegram.WebApp.showAlert('Please connect wallet first!');
+                return;
+            }
+            
+            // Add your ERC20 deployment logic here
+            // This typically involves:
+            // 1. Compiling contract ABI
+            // 2. Estimating gas
+            // 3. Sending transaction
+        });
     </script>
 </body>
 </html>
