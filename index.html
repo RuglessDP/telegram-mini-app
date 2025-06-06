@@ -1,6 +1,3 @@
-Here's the **corrected and complete solution** with the form visible immediately, while keeping wallet connection optional until deployment:
-
-```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -9,179 +6,298 @@ Here's the **corrected and complete solution** with the form visible immediately
     <title>Token Deployer</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* Telegram Theme Integration */
+        :root {
+            --tg-bg: var(--tg-theme-bg-color, #f8f9fa);
+            --tg-text: var(--tg-theme-text-color, #212529);
+            --tg-button: var(--tg-theme-button-color, #6C47FF);
+            --tg-button-text: var(--tg-theme-button-text-color, white);
+        }
+        
         body {
-            font-family: -apple-system, sans-serif;
-            background: var(--tg-theme-bg-color, #f5f5f5);
-            color: var(--tg-theme-text-color, #222);
-            padding: 15px;
             margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--tg-bg);
+            color: var(--tg-text);
         }
-        .wallet-section {
-            background: var(--tg-theme-secondary-bg-color, #eee);
+
+        /* Form Container */
+        .container {
             padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: none; /* Hidden by default */
+            max-width: 100%;
+            box-sizing: border-box;
         }
-        .wallet-btn {
-            background: #f6851b;
-            color: white;
-            border: none;
+
+        /* Header Styling */
+        .admin-header h2 {
+            color: var(--tg-button);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
             padding: 12px;
+            border: 1px solid #ddd;
             border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background-color: var(--tg-theme-secondary-bg-color, white);
+            color: var(--tg-text);
+        }
+
+        /* Divider */
+        .divider-with-text {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .divider-with-text span {
+            background: var(--tg-bg);
+            padding: 0 10px;
+            position: relative;
+            z-index: 1;
+            color: var(--tg-button);
+            font-weight: bold;
+        }
+        
+        .divider-with-text:before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            border-top: 1px solid #ddd;
+            z-index: 0;
+        }
+
+        /* Submit Button */
+        .submit-button {
+            background: var(--tg-button);
+            color: var(--tg-button-text);
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
             width: 100%;
             font-size: 16px;
-            margin: 5px 0;
+            font-weight: bold;
             cursor: pointer;
-        }
-        .continue-btn {
-            background: var(--tg-theme-button-color, #6C47FF);
-        }
-        #walletAddress {
-            word-break: break-all;
-            font-size: 14px;
             margin-top: 10px;
-            padding: 8px;
-            background: rgba(0,0,0,0.1);
-            border-radius: 5px;
-            display: none;
         }
-        #connectLaterBtn {
-            display: none; /* Only shows after form submission */
+
+        /* Responsive Grid */
+        .form-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+        
+        @media (max-width: 600px) {
+            .form-row-2, .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Telegram Header */
+        .telegram-header {
+            background: var(--tg-button);
+            color: var(--tg-button-text);
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .close-btn {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            background: none;
+            border: none;
+            color: var(--tg-button-text);
+            font-size: 20px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <!-- Your Form (Visible Immediately) -->
-    <form id="contractForm">
-        <h2>Token Details</h2>
-        
-        <!-- Paste ALL your form fields here exactly as you have them -->
-        <div class="form-group">
-            <label for="tokenName">Token Name</label>
-            <input type="text" id="tokenName" required>
-        </div>
-        
-        <!-- Include ALL other inputs, dividers, etc. -->
-        
-        <button type="submit" class="wallet-btn continue-btn">Start Deployment</button>
-    </form>
+    <!-- Telegram Header -->
+    <div class="telegram-header">
+        🚀 Token Deployer
+        <button class="close-btn" onclick="Telegram.WebApp.close()">×</button>
+    </div>
 
-    <!-- Wallet Connection Modal (Hidden Until Needed) -->
-    <div id="walletSection" class="wallet-section">
-        <h3>Connect Wallet to Confirm</h3>
-        <button id="connectBtn" class="wallet-btn">Connect MetaMask</button>
-        <button id="walletConnectBtn" class="wallet-btn" style="background: #3b99fc;">WalletConnect</button>
-        <button id="connectLaterBtn" class="wallet-btn continue-btn">Continue Without Connecting</button>
-        <div id="walletAddress"></div>
+    <!-- Your Form (Exactly as provided) -->
+    <div class="container" id="formContainerDiv">
+        <form id="contractForm">
+            <div class="admin-header">
+                <h2>Generate Your Token</h2>
+            </div>
+
+            <div class="divider-with-text">
+                <span>Token Details</span>
+            </div>
+
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label for="tokenName">Token Name</label>
+                    <input type="text" id="tokenName" name="tokenName" required>
+                </div>
+                <div class="form-group">
+                    <label for="tokenSymbol">Token Symbol</label>
+                    <input type="text" id="tokenSymbol" name="tokenSymbol" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="maxWallet">Max Wallet</label>
+                    <input type="number" id="maxWallet" min="1" value="10000" step="1" name="maxWallet" required>
+                </div>
+                <div class="form-group">
+                    <label for="maxTransaction">Max Transaction</label>
+                    <input type="number" id="maxTransaction" min="1" value="100000" step="1" name="maxTransaction" required>
+                </div>
+                <div class="form-group">
+                    <label for="tokenDecimal">Decimals</label>
+                    <input type="number" id="tokenDecimal" value="18" name="tokenDecimal" min="1" max="18" step="1" required>
+                </div>
+            </div>
+
+            <div class="divider-with-text">
+                <span>Tax & Supply</span>
+            </div>
+            <div class="form-row-2" style="margin-top: 15px;">
+                <div class="form-group">
+                    <label for="totalSupply">Total Supply</label>
+                    <input type="number" step="1" value="1000000" id="totalSupply" name="totalSupply" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="supplyPercentage">Supply Percentage</label>
+                    <input type="number" id="supplyPercentage" min="1" max="100" step="1" value="100" name="supplyPercentage" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="buyTax">Buy Tax</label>
+                    <input type="number" min="0" max="25" value="5" step="1" id="buyTax" name="buyTax" required>
+                </div>
+                <div class="form-group">
+                    <label for="sellTax">Sell Tax</label>
+                    <input type="number" min="0" max="25" value="5" step="1" id="sellTax" name="sellTax" required>
+                </div>
+                <div class="form-group">
+                    <label for="marketingWallet">Marketing Wallet</label>
+                    <input type="text" id="marketingWallet" name="marketingWallet" required>
+                </div>
+            </div>
+            <div class="form-row" id="liqDev">
+                <div class="form-group">
+                    <label for="liquidity">Liquidity</label>
+                    <input type="number" min="0.01" step="0.0001" id="liquidity" name="liquidity" placeholder="Liquidity in ETH" required>
+                </div>
+            </div>
+
+            <div class="divider-with-text">
+                <span>Social Media</span>
+            </div>
+
+            <div class="row">
+                <div class="col-3">
+                    <div class="form-group">
+                        <input type="text" id="telegram" placeholder="Telegram" name="telegram">
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="form-group">
+                        <input type="text" id="twitter" placeholder="X" name="twitter">
+                    </div>
+                </div>
+
+                <div class="col-3">
+                    <div class="form-group">
+                        <input type="text" id="website" placeholder="Website" name="website">
+                    </div>
+                </div>
+
+                <div class="col-3">
+                    <div class="form-group">
+                        <input type="text" id="medium" placeholder="Medium" name="medium">
+                    </div>
+                </div>
+            </div>
+            <hr>
+
+            <div style="margin-top: 10px;">
+                <div class="row" id="checkBurnDev" style="display: inline-flex;">
+                    <div class="col-1">
+                        <input type="checkbox" id="isBurnCheckBox">
+                    </div>
+                    <div class="col" style="margin-left: -5px;">
+                        <span>I accept that the liquidity will be burned and cannot be recovered.</span>
+                    </div>
+                </div>
+                <button id="btnSubmit" class="submit-button" style="margin-top: 5px;" type="submit">Start</button>
+            </div>
+        </form>
+        
+        <div id="loader" class="loader-overlay" style="display: none;">
+            <div class="sk-chase">
+                <div class="sk-chase-dot"></div>
+                <div class="sk-chase-dot"></div>
+                <div class="sk-chase-dot"></div>
+                <div class="sk-chase-dot"></div>
+                <div class="sk-chase-dot"></div>
+                <div class="sk-chase-dot"></div>
+            </div>
+            <div id="loader-text" class="loader-text">Loading, please wait...</div>
+        </div>
     </div>
 
     <script>
+        // Initialize Telegram WebApp
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
-        let formData = {};
-
-        // Form submission handler
-        document.getElementById('contractForm').addEventListener('submit', (e) => {
+        
+        // Auto-close after submission
+        document.getElementById('contractForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            document.getElementById('loader').style.display = 'block';
             
-            // Store form data
-            formData = {
-                tokenName: document.getElementById('tokenName').value,
-                // Add all other form fields here
-            };
-
-            // Show wallet connection options
-            document.getElementById('walletSection').style.display = 'block';
-            document.getElementById('connectLaterBtn').style.display = 'block';
-            
-            // Scroll to wallet section
-            document.getElementById('walletSection').scrollIntoView();
+            // Simulate processing (replace with actual form submission)
+            setTimeout(function() {
+                Telegram.WebApp.showAlert('Token deployed successfully!');
+                Telegram.WebApp.close();
+            }, 3000);
         });
-
-        // MetaMask connection
-        document.getElementById('connectBtn').addEventListener('click', async () => {
-            if (typeof window.ethereum === 'undefined') {
-                Telegram.WebApp.showAlert('Please install MetaMask!');
-                return;
-            }
-
-            try {
-                const accounts = await window.ethereum.request({ 
-                    method: 'eth_requestAccounts' 
-                });
-                completeDeployment(accounts[0]);
-            } catch (error) {
-                Telegram.WebApp.showAlert(`MetaMask error: ${error.message}`);
-            }
-        });
-
-        // WalletConnect connection
-        document.getElementById('walletConnectBtn').addEventListener('click', async () => {
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.8/dist/umd/index.min.js';
-            script.onload = async () => {
-                const provider = new WalletConnectProvider.default({
-                    rpc: { 1: "https://mainnet.infura.io/v3/YOUR_INFURA_KEY" }
-                });
-                
-                await provider.enable();
-                const web3 = new Web3(provider);
-                const accounts = await web3.eth.getAccounts();
-                completeDeployment(accounts[0]);
-            };
-            document.head.appendChild(script);
-        });
-
-        // Continue without connecting
-        document.getElementById('connectLaterBtn').addEventListener('click', () => {
-            Telegram.WebApp.showAlert('Form submitted in demo mode');
-            // Add any non-wallet submission logic here
-        });
-
-        function completeDeployment(address) {
-            Telegram.WebApp.showAlert(`
-                Ready to deploy ${formData.tokenName}!
-                From: ${address.slice(0,6)}...${address.slice(-4)}
-            `);
-            // Add your actual deployment logic here
+        
+        // Pre-fill wallet if available
+        if (Telegram.WebApp.initDataUnsafe.user) {
+            document.getElementById('marketingWallet').value = 
+                Telegram.WebApp.initDataUnsafe.user.id || 'User_' + Math.random().toString(36).substr(2, 9);
         }
     </script>
 </body>
 </html>
-```
-
-### Key Fixes:
-1. **Form Now Visible Immediately**  
-   - The form shows up first (no more hidden form)
-   - Wallet connection only appears after clicking "Start Deployment"
-
-2. **Clear User Flow**:
-   ```mermaid
-   graph TD
-       A[Fill Form] --> B[Click Start Deployment]
-       B --> C{Connect Wallet?}
-       C -->|Yes| D[Choose MetaMask/WalletConnect]
-       C -->|No| E[Continue Without Connecting]
-   ```
-
-3. **What Changed From Previous Version**:
-   - Removed `display: none` from form container
-   - Wallet section now hides by default
-   - Added scroll-to behavior when showing wallet options
-
-4. **How to Implement**:
-   - Paste your **complete form HTML** where indicated
-   - Keep all your existing field IDs/classes
-   - The CSS will automatically style your form to match Telegram's theme
-
-### Testing Checklist:
-1. Verify form appears immediately on page load
-2. Test "Start Deployment" shows wallet options
-3. Check both wallet connection methods work
-4. Confirm "Continue Without Connecting" functions
-
-Would you like me to adjust any specific part of this flow? For example:
-- Make the wallet connection section look different?
-- Add more guidance text?
-- Change the button colors?
