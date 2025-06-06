@@ -4,12 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Token Deployer</title>
+    <!-- Telegram WebApp JS (required) -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- All-in-One CSS -->
     <style>
-        body { margin: 0; padding: 0; }
-        iframe { width: 100%; height: 100vh; border: none; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+        }
+        #header {
+            padding: 12px;
+            background: #6C47FF;
+            color: white;
+            text-align: center;
+            font-size: 18px;
+        }
+        iframe {
+            width: 100%;
+            height: calc(100vh - 50px); /* Adjust for header */
+            border: none;
+        }
+        #close-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            color: #6C47FF;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            z-index: 9999;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+    <!-- Header -->
+    <div id="header">
+        🚀 Rugless Token Deployer
+        <button id="close-btn" onclick="Telegram.WebApp.close()">×</button>
+    </div>
+
+    <!-- Embedded App -->
     <iframe src="https://deploy.ruglessdp.com"></iframe>
+
+    <!-- All-in-One JavaScript -->
+    <script>
+        // Initialize Telegram WebApp
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand(); // Full-screen mode
+
+        // Theme-aware styles (optional)
+        document.body.style.backgroundColor = Telegram.WebApp.themeParams.bg_color || '#ffffff';
+        document.body.style.color = Telegram.WebApp.themeParams.text_color || '#000000';
+
+        // Block iframe redirects (optional)
+        window.addEventListener('message', (e) => {
+            if (e.data.redirect) {
+                Telegram.WebApp.openLink(e.data.url); // Ask user before leaving
+            }
+        });
+    </script>
 </body>
 </html>
