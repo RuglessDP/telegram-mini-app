@@ -18,6 +18,7 @@
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 20px;
+            display: none; /* Hidden by default */
         }
         .wallet-btn {
             background: #f6851b;
@@ -42,82 +43,106 @@
             border-radius: 5px;
             display: none;
         }
-        .form-container {
-            display: none; /* Hidden until user chooses to continue */
+        #connectLaterBtn {
+            display: none; /* Only shows after form submission */
         }
     </style>
 </head>
 <body>
-    <!-- Wallet Connection Section (Visible First) -->
-    <div class="wallet-section">
-        <h3>Connect Wallet to Deploy</h3>
-        <button id="connectBtn" class="wallet-btn">Connect Wallet</button>
-        <button id="continueBtn" class="wallet-btn continue-btn">Continue Without Connecting</button>
-        <div id="walletAddress"></div>
-    </div>
+    <!-- Your Form (Visible Immediately) -->
+    <form id="contractForm">
+        <h2>Token Details</h2>
+        
+        <!-- Paste ALL your form fields here exactly as you have them -->
+        <div class="form-group">
+            <label for="tokenName">Token Name</label>
+            <input type="text" id="tokenName" required>
+        </div>
+        
+        <!-- Include ALL other inputs, dividers, etc. -->
+        
+        <button type="submit" class="wallet-btn continue-btn">Start Deployment</button>
+    </form>
 
-    <!-- Form Container (Hidden Initially) -->
-    <div id="formContainer" class="form-container">
-        <!-- Your Existing Form Here -->
-        <form id="contractForm">
-            <!-- All your token detail inputs -->
-            <button type="submit" class="wallet-btn continue-btn">Start Deployment</button>
-        </form>
+    <!-- Wallet Connection Modal (Hidden Until Needed) -->
+    <div id="walletSection" class="wallet-section">
+        <h3>Connect Wallet to Confirm</h3>
+        <button id="connectBtn" class="wallet-btn">Connect MetaMask</button>
+        <button id="walletConnectBtn" class="wallet-btn" style="background: #3b99fc;">WalletConnect</button>
+        <button id="connectLaterBtn" class="wallet-btn continue-btn">Continue Without Connecting</button>
+        <div id="walletAddress"></div>
     </div>
 
     <script>
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
+        let formData = {};
 
-        // 1. Wallet Connection Logic
-        document.getElementById('connectBtn').addEventListener('click', async () => {
-            try {
-                // Load WalletConnect dynamically
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.8/dist/umd/index.min.js';
-                document.head.appendChild(script);
-                
-                script.onload = async () => {
-                    const provider = new WalletConnectProvider.default({
-                        rpc: { 1: "https://mainnet.infura.io/v3/YOUR_INFURA_KEY" }
-                    });
-                    
-                    await provider.enable();
-                    const accounts = await new Web3(provider).eth.getAccounts();
-                    showWalletConnected(accounts[0]);
-                };
-            } catch (error) {
-                Telegram.WebApp.showAlert(`Connection failed: ${error.message}`);
-            }
-        });
-
-        // 2. Continue Without Wallet
-        document.getElementById('continueBtn').addEventListener('click', () => {
-            document.getElementById('formContainer').style.display = 'block';
-            document.querySelector('.wallet-section').style.display = 'none';
-        });
-
-        // 3. Show Form When Wallet Connected
-        function showWalletConnected(address) {
-            document.getElementById('walletAddress').textContent = `Connected: ${address}`;
-            document.getElementById('walletAddress').style.display = 'block';
-            document.getElementById('formContainer').style.display = 'block';
-            document.getElementById('connectBtn').style.display = 'none';
-        }
-
-        // 4. Form Submission
+        // Form submission handler
         document.getElementById('contractForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            const wallet = document.getElementById('walletAddress').textContent;
             
-            if (wallet.includes('0x')) {
-                Telegram.WebApp.showAlert('Ready to deploy from: ' + wallet);
-                // Add your deployment logic here
-            } else {
-                Telegram.WebApp.showAlert('Form submitted (demo mode)');
-                // Show alternative options for non-connected users
+            // Store form data
+            formData = {
+                tokenName: document.getElementById('tokenName').value,
+                // Add all other form fields here
+            };
+
+            // Show wallet connection options
+            document.getElementById('walletSection').style.display = 'block';
+            document.getElementById('connectLaterBtn').style.display = 'block';
+            
+            // Scroll to wallet section
+            document.getElementById('walletSection').scrollIntoView();
+        });
+
+        // MetaMask connection
+        document.getElementById('connectBtn').addEventListener('click', async () => {
+            if (typeof window.ethereum === 'undefined') {
+                Telegram.WebApp.showAlert('Please install MetaMask!');
+                return;
+            }
+
+            try {
+                const accounts = await window.ethereum.request({ 
+                    method: 'eth_requestAccounts' 
+                });
+                completeDeployment(accounts[0]);
+            } catch (error) {
+                Telegram.WebApp.showAlert(`MetaMask error: ${error.message}`);
             }
         });
+
+        // WalletConnect connection
+        document.getElementById('walletConnectBtn').addEventListener('click', async () => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.8/dist/umd/index.min.js';
+            script.onload = async () => {
+                const provider = new WalletConnectProvider.default({
+                    rpc: { 1: "https://mainnet.infura.io/v3/YOUR_INFURA_KEY" }
+                });
+                
+                await provider.enable();
+                const web3 = new Web3(provider);
+                const accounts = await web3.eth.getAccounts();
+                completeDeployment(accounts[0]);
+            };
+            document.head.appendChild(script);
+        });
+
+        // Continue without connecting
+        document.getElementById('connectLaterBtn').addEventListener('click', () => {
+            Telegram.WebApp.showAlert('Form submitted in demo mode');
+            // Add any non-wallet submission logic here
+        });
+
+        function completeDeployment(address) {
+            Telegram.WebApp.showAlert(`
+                Ready to deploy ${formData.tokenName}!
+                From: ${address.slice(0,6)}...${address.slice(-4)}
+            `);
+            // Add your actual deployment logic here
+        }
     </script>
 </body>
 </html>
